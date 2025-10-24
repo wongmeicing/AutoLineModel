@@ -1,0 +1,2466 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>球衣自動化生產線 - 電路圖風格軌道系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
+            color: #333;
+            overflow: hidden;
+        }
+        
+        #container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #controlPanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        #controlPanel.hidden {
+            transform: translateX(400px);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .process-flow {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .process-step {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .step-number {
+            background: #3498db;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 12px;
+        }
+        
+        .corrected {
+            background: #2ecc71;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        
+        .toggle-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+        
+        .toggle-btn:hover {
+            background: #2980b9;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: #3498db;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .stat-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 3px solid #3498db;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+        
+        .color-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        #togglePanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 99;
+            transition: all 0.3s ease;
+        }
+        
+        #togglePanel:hover {
+            background: white;
+            transform: scale(1.05);
+        }
+        
+        #infoDisplay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            max-width: 300px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #infoTitle {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        #infoDetails {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+        }
+        
+        .slider {
+            flex: 1;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+        
+        .value-display {
+            margin-left: 10px;
+            font-size: 12px;
+            color: #7f8c8d;
+            min-width: 40px;
+        }
+        
+        .checkbox {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox input {
+            margin-right: 8px;
+        }
+        
+        .simulation-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .sim-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .play-btn {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .play-btn:hover {
+            background: #27ae60;
+        }
+        
+        .pause-btn {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .pause-btn:hover {
+            background: #d35400;
+        }
+        
+        .reset-btn {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background: #c0392b;
+        }
+        
+        .progress-container {
+            margin-top: 15px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: #3498db;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        .machine-label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            transform: translateY(-100%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 50;
+            max-width: 200px;
+            overflow: hidden;
+        }
+        
+        .machine-label.expanded {
+            white-space: normal;
+            max-width: 250px;
+            z-index: 60;
+        }
+        
+        .label-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .label-details {
+            font-size: 10px;
+            opacity: 0;
+            max-height: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .machine-label.expanded .label-details {
+            opacity: 1;
+            max-height: 100px;
+        }
+
+        .floor-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .floor-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #3498db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .floor-btn.active {
+            background: #3498db;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <button id="togglePanel">☰</button>
+    
+    <div id="controlPanel">
+        <div class="panel-header">
+            <div class="panel-title">電路圖風格軌道系統</div>
+            <button class="toggle-btn" id="hidePanel">隱藏</button>
+        </div>
+
+        <div class="section">
+            <div class="section-title">樓層選擇</div>
+            <div class="floor-selector">
+                <button class="floor-btn active" id="showFirstFloor">一樓</button>
+                <button class="floor-btn" id="showSecondFloor">二樓</button>
+                <button class="floor-btn" id="showBothFloors">全部</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">生產流程說明</div>
+            <div class="process-flow">
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div>貨車卸貨 → AGV轉運 → 倉庫存儲</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div>倉庫 → 升降機 → 二樓生產線</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div>原料布匹 → 印刷加工</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div>印刷 → 激光裁剪</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">5</div>
+                    <div>裁剪 → 第一次檢測 <span class="corrected">裁片質檢</span></div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">6</div>
+                    <div>合格裁片 → 縫紉加工</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">7</div>
+                    <div>縫紉 → 第二次檢測 <span class="corrected">成品質檢</span></div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">8</div>
+                    <div>合格成品 → 自動包裝</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">9</div>
+                    <div>包裝 → 升降機 → 一樓成品倉庫</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">10</div>
+                    <div>成品倉庫 → AGV轉運 → 貨車出貨</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">模擬控制</div>
+            <div class="simulation-controls">
+                <button class="sim-btn play-btn" id="playSim">開始模擬</button>
+                <button class="sim-btn pause-btn" id="pauseSim">暫停</button>
+                <button class="sim-btn reset-btn" id="resetSim">重置</button>
+            </div>
+            <div class="progress-container">
+                <div class="control-label">生產進度</div>
+                <div class="progress-bar">
+                    <div class="progress" id="simProgress"></div>
+                </div>
+                <div class="progress-labels">
+                    <span>原料</span>
+                    <span>成品</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">軌道系統控制</div>
+            <div class="control-group">
+                <div class="control-label">軌道顯示模式</div>
+                <div class="checkbox">
+                    <input type="checkbox" id="showCircuitStyle" checked>
+                    <label for="showCircuitStyle">電路圖風格軌道</label>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">軌道動畫速度</div>
+                <div class="slider-container">
+                    <input type="range" min="1" max="10" value="5" class="slider" id="trackSpeed">
+                    <div class="value-display" id="trackSpeedValue">正常</div>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">模擬速度</div>
+                <div class="slider-container">
+                    <input type="range" min="1" max="10" value="5" class="slider" id="simSpeed">
+                    <div class="value-display" id="speedValue">正常</div>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-label">卸貨頻率</div>
+                <div class="slider-container">
+                    <input type="range" min="1" max="10" value="5" class="slider" id="unloadingFrequency">
+                    <div class="value-display" id="unloadingValue">正常</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">可視化控制</div>
+            <div class="control-group">
+                <div class="control-label">縮放級別</div>
+                <div class="slider-container">
+                    <input type="range" min="10" max="100" value="60" class="slider" id="zoomLevel">
+                    <div class="value-display" id="zoomValue">60%</div>
+                </div>
+            </div>
+            <div class="checkbox">
+                <input type="checkbox" id="showLabels" checked>
+                <label for="showLabels">顯示區域標籤</label>
+            </div>
+            <div class="checkbox">
+                <input type="checkbox" id="showMachineLabels" checked>
+                <label for="showMachineLabels">顯示機器標籤</label>
+            </div>
+            <div class="checkbox">
+                <input type="checkbox" id="showMaterialFlow" checked>
+                <label for="showMaterialFlow">顯示物料流動</label>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">生產線數據</div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value">800 m²</div>
+                    <div class="stat-label">總面積</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">12 m</div>
+                    <div class="stat-label">廠房高度</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">2 層</div>
+                    <div class="stat-label">樓層數</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">8 區</div>
+                    <div class="stat-label">功能區域</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">2 台</div>
+                    <div class="stat-label">AGV小車</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">1 台</div>
+                    <div class="stat-label">升降機</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">軌道圖例</div>
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="color-indicator" style="background:#3498db;"></span>
+                    <span>主傳輸軌道</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color-indicator" style="background:#2ecc71;"></span>
+                    <span>垂直提升軌道</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color-indicator" style="background:#e74c3c;"></span>
+                    <span>工作站連接軌道</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color-indicator" style="background:#f39c12;"></span>
+                    <span>返回軌道</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color-indicator" style="background:#9b59b6;"></span>
+                    <span>AGV路徑</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="infoDisplay">
+        <div id="infoTitle">電路圖風格軌道系統</div>
+        <div id="infoDetails">採用橫平豎直的電路圖風格軌道，避免交錯重疊，提高可讀性。</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <script>
+        // 初始化變量
+        let scene, camera, renderer, controls;
+        let floor, areas = [];
+        let isPanelVisible = true;
+        let simulationRunning = false;
+        let simulationSpeed = 5;
+        let trackSpeed = 5;
+        let materialObjects = [];
+        let animationMixers = [];
+        let clock = new THREE.Clock();
+        let unifiedInspectionMachine;
+        let inspectionMode = 'cut'; // 'cut' 或 'finished'
+        let machineLabels = [];
+        let trackObjects = [];
+        let firstFloorObjects = [];
+        let secondFloorObjects = [];
+        let currentFloorView = 'both'; // 'first', 'second', 'both'
+        let agvObjects = [];
+        let elevatorObject;
+        let unloadingFrequency = 5;
+        let unloadingTimer = 0;
+
+        // 初始化場景
+        function init() {
+            // 創建場景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf5f7fa);
+            
+            // 創建相機
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(30, 20, 30);
+            
+            // 創建渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // 添加軌道控制
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = false; // 移除自動旋轉
+            
+            // 添加光源
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(20, 30, 10);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+            
+            // 創建一樓佈局
+            createFirstFloorLayout();
+            
+            // 創建二樓佈局 - 使用電路圖風格軌道
+            createSecondFloorLayout();
+            
+            // 創建升降機
+            createElevator();
+            
+            // 創建AGV小車
+            createAGVs();
+            
+            // 添加窗口調整事件監聽
+            window.addEventListener('resize', onWindowResize);
+            
+            // 添加控制面板事件監聽
+            setupEventListeners();
+            
+            // 設置樓層顯示
+            updateFloorVisibility();
+            
+            // 開始動畫循環
+            animate();
+        }
+        
+        // 創建一樓佈局
+        function createFirstFloorLayout() {
+            // 創建一樓地面
+            const floorGeometry = new THREE.PlaneGeometry(60, 40);
+            const floorMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xd0d0d0, 
+                side: THREE.DoubleSide 
+            });
+            const firstFloor = new THREE.Mesh(floorGeometry, floorMaterial);
+            firstFloor.rotation.x = Math.PI / 2;
+            firstFloor.position.y = -10;
+            firstFloor.receiveShadow = true;
+            scene.add(firstFloor);
+            firstFloorObjects.push(firstFloor);
+            
+            // 添加網格輔助線
+            const gridHelper = new THREE.GridHelper(60, 60, 0xaaaaaa, 0xaaaaaa);
+            gridHelper.position.y = -9.99;
+            scene.add(gridHelper);
+            firstFloorObjects.push(gridHelper);
+            
+            // 定義一樓各區域
+            const firstFloorAreas = [
+                {
+                    name: "貨車卸貨區",
+                    color: 0x3498db,
+                    position: { x: -25, z: -10 },
+                    size: { width: 10, depth: 8, height: 4 },
+                    description: "貨車自動卸貨平台，機械臂自動卸貨系統"
+                },
+                {
+                    name: "AGV轉運區",
+                    color: 0x2ecc71,
+                    position: { x: -12, z: -10 },
+                    size: { width: 12, depth: 8, height: 3 },
+                    description: "AGV小車轉運區，智能路徑規劃系統"
+                },
+                {
+                    name: "智能立體倉庫",
+                    color: 0x9b59b6,
+                    position: { x: 5, z: -10 },
+                    size: { width: 15, depth: 10, height: 8 },
+                    description: "多層貨架系統，自動化存取設備"
+                },
+                {
+                    name: "成品倉庫",
+                    color: 0xf39c12,
+                    position: { x: -15, z: 8 },
+                    size: { width: 12, depth: 8, height: 4 },
+                    description: "成品存儲區，等待出貨"
+                },
+                {
+                    name: "出貨區",
+                    color: 0xe74c3c,
+                    position: { x: 5, z: 8 },
+                    size: { width: 10, depth: 6, height: 4 },
+                    description: "成品出貨區，貨車裝貨平台"
+                }
+            ];
+            
+            // 創建一樓各區域
+            firstFloorAreas.forEach(areaDef => {
+                createFirstFloorArea(areaDef);
+            });
+            
+            // 創建貨車卸貨平台
+            createUnloadingPlatform();
+            
+            // 創建立體倉庫貨架
+            createWarehouseRacks();
+            
+            // 創建AGV路徑
+            createAGVPaths();
+        }
+        
+        // 創建一樓區域
+        function createFirstFloorArea(areaDef) {
+            const { name, color, position, size, description } = areaDef;
+            
+            // 創建區域主體
+            const geometry = new THREE.BoxGeometry(size.width, size.height, size.depth);
+            const material = new THREE.MeshLambertMaterial({ 
+                color: color,
+                transparent: true,
+                opacity: 0.7
+            });
+            const area = new THREE.Mesh(geometry, material);
+            area.position.set(position.x, -10 + size.height / 2, position.z);
+            area.castShadow = true;
+            area.receiveShadow = true;
+            
+            // 存儲區域信息
+            area.userData = {
+                name: name,
+                description: description,
+                size: size
+            };
+            
+            scene.add(area);
+            firstFloorObjects.push(area);
+            
+            // 添加區域邊框
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(
+                edges,
+                new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 })
+            );
+            area.add(line.clone());
+            
+            // 添加區域標籤
+            addFirstFloorAreaLabel(area, name, size);
+        }
+        
+        // 添加一樓區域標籤
+        function addFirstFloorAreaLabel(area, name, size) {
+            // 創建canvas繪製文本
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 256;
+            canvas.height = 128;
+            
+            context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            context.font = 'Bold 20px Arial';
+            context.fillStyle = '#2c3e50';
+            context.textAlign = 'center';
+            context.fillText(name, canvas.width / 2, 40);
+            
+            context.font = '14px Arial';
+            context.fillStyle = '#7f8c8d';
+            context.fillText(
+                `${size.width} × ${size.depth} × ${size.height}m`, 
+                canvas.width / 2, 
+                70
+            );
+            
+            // 創建紋理
+            const texture = new THREE.CanvasTexture(canvas);
+            const labelMaterial = new THREE.SpriteMaterial({ 
+                map: texture,
+                transparent: true
+            });
+            
+            // 創建精靈
+            const label = new THREE.Sprite(labelMaterial);
+            label.position.set(0, size.height / 2 + 1, 0);
+            label.scale.set(8, 4, 1);
+            area.add(label);
+        }
+        
+        // 創建貨車卸貨平台
+        function createUnloadingPlatform() {
+            // 創建卸貨平台
+            const platformGeometry = new THREE.BoxGeometry(8, 0.2, 6);
+            const platformMaterial = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
+            const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+            platform.position.set(-25, -9.9, -10);
+            scene.add(platform);
+            firstFloorObjects.push(platform);
+            
+            // 創建機械臂
+            const armBaseGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 16);
+            const armBaseMaterial = new THREE.MeshLambertMaterial({ color: 0x34495e });
+            const armBase = new THREE.Mesh(armBaseGeometry, armBaseMaterial);
+            armBase.position.set(-25, -9.5, -10);
+            scene.add(armBase);
+            firstFloorObjects.push(armBase);
+            
+            const armGeometry = new THREE.BoxGeometry(0.2, 2, 0.2);
+            const armMaterial = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
+            const arm = new THREE.Mesh(armGeometry, armMaterial);
+            arm.position.set(-25, -8.5, -10);
+            scene.add(arm);
+            firstFloorObjects.push(arm);
+            
+            // 添加貨車模型
+            const truckGeometry = new THREE.BoxGeometry(6, 2, 3);
+            const truckMaterial = new THREE.MeshLambertMaterial({ color: 0x2c3e50 });
+            const truck = new THREE.Mesh(truckGeometry, truckMaterial);
+            truck.position.set(-25, -9, -15);
+            scene.add(truck);
+            firstFloorObjects.push(truck);
+            
+            // 添加卸貨區標籤
+            addMachineLabel(
+                armBase, 
+                "自動卸貨系統", 
+                "機械臂自動卸貨\n卸貨頻率可調節\n視覺定位系統"
+            );
+        }
+        
+        // 創建立體倉庫貨架
+        function createWarehouseRacks() {
+            // 創建多層貨架
+            for (let level = 0; level < 4; level++) {
+                for (let i = 0; i < 3; i++) {
+                    const rackGeometry = new THREE.BoxGeometry(4, 1.5, 1);
+                    const rackMaterial = new THREE.MeshLambertMaterial({ color: 0x95a5a6 });
+                    const rack = new THREE.Mesh(rackGeometry, rackMaterial);
+                    rack.position.set(
+                        5 + i * 4.5, 
+                        -10 + level * 1.8 + 0.75, 
+                        -10
+                    );
+                    scene.add(rack);
+                    firstFloorObjects.push(rack);
+                }
+            }
+            
+            // 添加堆垛機
+            const stackerGeometry = new THREE.BoxGeometry(0.5, 6, 0.5);
+            const stackerMaterial = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
+            const stacker = new THREE.Mesh(stackerGeometry, stackerMaterial);
+            stacker.position.set(2, -7, -10);
+            scene.add(stacker);
+            firstFloorObjects.push(stacker);
+            
+            // 添加立體倉庫標籤
+            addMachineLabel(
+                stacker, 
+                "智能立體倉庫", 
+                "多層貨架系統\n自動化存取設備\n大容量存儲能力"
+            );
+        }
+        
+        // 創建AGV路徑
+        function createAGVPaths() {
+            // 定義AGV路徑點
+            const pathPoints = [
+                { x: -25, y: -9.5, z: -10 },  // 卸貨區
+                { x: -15, y: -9.5, z: -10 },  // 轉運區
+                { x: 5, y: -9.5, z: -10 },    // 倉庫區
+                { x: 5, y: -9.5, z: 8 },      // 成品倉庫
+                { x: -15, y: -9.5, z: 8 },    // 成品區
+                { x: 5, y: -9.5, z: 8 },      // 出貨區
+            ];
+            
+            // 創建路徑視覺化
+            for (let i = 0; i < pathPoints.length - 1; i++) {
+                const start = pathPoints[i];
+                const end = pathPoints[i + 1];
+                
+                const length = Math.sqrt(
+                    Math.pow(end.x - start.x, 2) + 
+                    Math.pow(end.z - start.z, 2)
+                );
+                
+                const midX = (start.x + end.x) / 2;
+                const midZ = (start.z + end.z) / 2;
+                
+                const geometry = new THREE.PlaneGeometry(length, 0.2);
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0x9b59b6,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const path = new THREE.Mesh(geometry, material);
+                path.rotation.x = Math.PI / 2;
+                path.position.set(midX, -9.8, midZ);
+                
+                // 旋轉以對齊方向
+                const angle = Math.atan2(end.z - start.z, end.x - start.x);
+                path.rotation.y = -angle;
+                
+                scene.add(path);
+                firstFloorObjects.push(path);
+            }
+        }
+        
+        // 創建AGV小車
+        function createAGVs() {
+            // 創建兩台AGV小車
+            for (let i = 0; i < 2; i++) {
+                const agvGeometry = new THREE.BoxGeometry(1, 0.5, 0.8);
+                const agvMaterial = new THREE.MeshLambertMaterial({ color: 0x2ecc71 });
+                const agv = new THREE.Mesh(agvGeometry, agvMaterial);
+                agv.position.set(-15 + i * 2, -9.5, -10);
+                
+                // 添加AGV標識
+                const agvLabelGeometry = new THREE.BoxGeometry(0.6, 0.1, 0.4);
+                const agvLabelMaterial = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
+                const agvLabel = new THREE.Mesh(agvLabelGeometry, agvLabelMaterial);
+                agvLabel.position.set(0, 0.3, 0);
+                agv.add(agvLabel);
+                
+                scene.add(agv);
+                firstFloorObjects.push(agv);
+                
+                // 存儲AGV信息
+                agv.userData = {
+                    id: i + 1,
+                    currentTarget: 0,
+                    pathPoints: [
+                        { x: -25, y: -9.5, z: -10 },  // 卸貨區
+                        { x: -15, y: -9.5, z: -10 },  // 轉運區
+                        { x: 5, y: -9.5, z: -10 },    // 倉庫區
+                        { x: 5, y: -9.5, z: 8 },      // 成品倉庫
+                        { x: -15, y: -9.5, z: 8 },    // 成品區
+                        { x: 5, y: -9.5, z: 8 },      // 出貨區
+                    ],
+                    progress: 0,
+                    carryingMaterial: false,
+                    materialType: null // 'raw' 或 'finished'
+                };
+                
+                agvObjects.push(agv);
+                
+                // 添加AGV標籤
+                addMachineLabel(
+                    agv, 
+                    `AGV小車 ${i+1}`, 
+                    `自動導引車\n智能路徑規劃\n充電站自動充電`
+                );
+            }
+            
+            // 創建AGV充電站
+            const chargerGeometry = new THREE.BoxGeometry(2, 0.5, 1);
+            const chargerMaterial = new THREE.MeshLambertMaterial({ color: 0xf39c12 });
+            const charger = new THREE.Mesh(chargerGeometry, chargerMaterial);
+            charger.position.set(-18, -9.5, -5);
+            scene.add(charger);
+            firstFloorObjects.push(charger);
+            
+            // 添加充電站標籤
+            addMachineLabel(
+                charger, 
+                "AGV充電站", 
+                "自動充電系統\n無線充電技術\n智能電量管理"
+            );
+        }
+        
+        // 創建升降機
+        function createElevator() {
+            // 創建升降機井
+            const shaftGeometry = new THREE.BoxGeometry(2, 10, 2);
+            const shaftMaterial = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
+            const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
+            shaft.position.set(0, -5, 0);
+            scene.add(shaft);
+            // 升降機井跨越兩層，所以不加入特定樓層組
+            
+            // 創建升降機轎廂
+            const cabinGeometry = new THREE.BoxGeometry(1.8, 1.5, 1.8);
+            const cabinMaterial = new THREE.MeshLambertMaterial({ color: 0x3498db });
+            const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial);
+            cabin.position.set(0, -5, 0);
+            scene.add(cabin);
+            
+            // 存儲升降機信息
+            cabin.userData = {
+                currentFloor: 'first', // 'first' 或 'second'
+                targetFloor: 'first',
+                moving: false,
+                progress: 0
+            };
+            
+            elevatorObject = cabin;
+            
+            // 添加升降機標籤
+            addMachineLabel(
+                cabin, 
+                "智能升降機", 
+                "連接一樓和二樓\n自動物料轉運\n安全傳感系統"
+            );
+        }
+        
+        // 創建二樓佈局
+        function createSecondFloorLayout() {
+            // 創建二樓地面
+            const floorGeometry = new THREE.PlaneGeometry(60, 40);
+            const floorMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xe0e0e0, 
+                side: THREE.DoubleSide 
+            });
+            const secondFloor = new THREE.Mesh(floorGeometry, floorMaterial);
+            secondFloor.rotation.x = Math.PI / 2;
+            secondFloor.receiveShadow = true;
+            scene.add(secondFloor);
+            secondFloorObjects.push(secondFloor);
+            
+            // 添加網格輔助線 - 電路圖風格
+            const gridHelper = new THREE.GridHelper(60, 60, 0xcccccc, 0xcccccc);
+            gridHelper.position.y = 0.01;
+            scene.add(gridHelper);
+            secondFloorObjects.push(gridHelper);
+            
+            // 定義二樓各區域
+            const areaDefinitions = [
+                {
+                    name: "原料與印刷區",
+                    color: 0x3498db,
+                    position: { x: -18, z: -5 },
+                    size: { width: 8, depth: 6, height: 3 },
+                    description: "存放空白布匹，進行熱轉印和激光雕刻加工"
+                },
+                {
+                    name: "立體傳輸區",
+                    color: 0x2ecc71,
+                    position: { x: -8, z: -5 },
+                    size: { width: 8, depth: 5, height: 6 },
+                    description: "垂直提升和高位傳輸系統，連接印刷與裁剪工序"
+                },
+                {
+                    name: "激光裁剪區",
+                    color: 0x1abc9c,
+                    position: { x: 2, z: -5 },
+                    size: { width: 8, depth: 5, height: 3.5 },
+                    description: "激光裁剪系統，精準切割球衣裁片"
+                },
+                {
+                    name: "統一檢測系統",
+                    color: 0x9b59b6,
+                    position: { x: 12, z: -5 },
+                    size: { width: 6, depth: 8, height: 4 },
+                    description: "同一台檢測機完成裁片瑕疵檢測和成品質檢"
+                },
+                {
+                    name: "縫紉加工區",
+                    color: 0xe74c3c,
+                    position: { x: -13, z: 8 },
+                    size: { width: 10, depth: 6, height: 4 },
+                    description: "機器人上料和智能吊掛系統，完成球衣縫製"
+                },
+                {
+                    name: "成品包裝區",
+                    color: 0xf39c12,
+                    position: { x: 0, z: 8 },
+                    size: { width: 6, depth: 4, height: 3 },
+                    description: "自動包裝、貼標和碼垛，成品入庫"
+                }
+            ];
+            
+            // 創建二樓各區域
+            areaDefinitions.forEach(areaDef => {
+                createSecondFloorArea(areaDef);
+            });
+            
+            // 創建電路圖風格軌道系統
+            createCircuitStyleTracks();
+            
+            // 添加設備模型
+            addEquipmentModels();
+            
+            // 創建縫紉工作站
+            createSewingStations();
+            
+            // 創建物料流動路徑點 - 根據電路圖風格軌道調整
+            createCircuitStyleMaterialFlowPath();
+        }
+        
+        // 創建二樓區域
+        function createSecondFloorArea(areaDef) {
+            const { name, color, position, size, description } = areaDef;
+            
+            // 創建區域主體
+            const geometry = new THREE.BoxGeometry(size.width, size.height, size.depth);
+            const material = new THREE.MeshLambertMaterial({ 
+                color: color,
+                transparent: true,
+                opacity: 0.7
+            });
+            const area = new THREE.Mesh(geometry, material);
+            area.position.set(position.x, size.height / 2, position.z);
+            area.castShadow = true;
+            area.receiveShadow = true;
+            
+            // 存儲區域信息
+            area.userData = {
+                name: name,
+                description: description,
+                size: size
+            };
+            
+            scene.add(area);
+            secondFloorObjects.push(area);
+            
+            // 添加區域邊框
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(
+                edges,
+                new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 })
+            );
+            area.add(line.clone());
+            
+            // 添加區域標籤
+            addSecondFloorAreaLabel(area, name, size);
+        }
+        
+        // 添加二樓區域標籤
+        function addSecondFloorAreaLabel(area, name, size) {
+            // 創建canvas繪製文本
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 256;
+            canvas.height = 128;
+            
+            context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            context.font = 'Bold 20px Arial';
+            context.fillStyle = '#2c3e50';
+            context.textAlign = 'center';
+            context.fillText(name, canvas.width / 2, 40);
+            
+            context.font = '14px Arial';
+            context.fillStyle = '#7f8c8d';
+            context.fillText(
+                `${size.width} × ${size.depth} × ${size.height}m`, 
+                canvas.width / 2, 
+                70
+            );
+            
+            // 創建紋理
+            const texture = new THREE.CanvasTexture(canvas);
+            const labelMaterial = new THREE.SpriteMaterial({ 
+                map: texture,
+                transparent: true
+            });
+            
+            // 創建精靈
+            const label = new THREE.Sprite(labelMaterial);
+            label.position.set(0, size.height / 2 + 1, 0);
+            label.scale.set(8, 4, 1);
+            area.add(label);
+        }
+        
+        // 創建電路圖風格軌道系統
+        function createCircuitStyleTracks() {
+            // 清除現有軌道
+            trackObjects.forEach(obj => scene.remove(obj));
+            trackObjects = [];
+            
+            // 定義軌道路徑 - 橫平豎直，不交錯重疊
+            const trackSegments = [
+                // 主水平軌道 - 從原料區到檢測機
+                { start: { x: -22, y: 1, z: -5 }, end: { x: 15, y: 1, z: -5 }, color: 0x3498db, type: "main" },
+                
+                // 垂直提升軌道 - 原料區到高位
+                { start: { x: -14, y: 1, z: -5 }, end: { x: -14, y: 4, z: -5 }, color: 0x2ecc71, type: "vertical" },
+                
+                // 高位水平軌道
+                { start: { x: -14, y: 4, z: -5 }, end: { x: 2, y: 4, z: -5 }, color: 0x3498db, type: "main" },
+                
+                // 垂直下降軌道 - 高位到裁剪區
+                { start: { x: 2, y: 4, z: -5 }, end: { x: 2, y: 1, z: -5 }, color: 0x2ecc71, type: "vertical" },
+                
+                // 從裁剪區到檢測機的水平軌道
+                { start: { x: 6, y: 1, z: -5 }, end: { x: 12, y: 1, z: -5 }, color: 0x3498db, type: "main" },
+                
+                // 從檢測機到縫紉區的軌道系統
+                { start: { x: 15, y: 1, z: -5 }, end: { x: 15, y: 4, z: -5 }, color: 0x2ecc71, type: "vertical" },
+                { start: { x: 15, y: 4, z: -5 }, end: { x: 15, y: 4, z: 8 }, color: 0x3498db, type: "main" },
+                { start: { x: 15, y: 4, z: 8 }, end: { x: 15, y: 1, z: 8 }, color: 0x2ecc71, type: "vertical" },
+                { start: { x: 15, y: 1, z: 8 }, end: { x: -8, y: 1, z: 8 }, color: 0x3498db, type: "main" },
+                
+                // 縫紉區內部軌道
+                { start: { x: -8, y: 1, z: 8 }, end: { x: -19, y: 1, z: 8 }, color: 0xe74c3c, type: "workstation" },
+                { start: { x: -10, y: 1, z: 8 }, end: { x: -10, y: 1, z: 10 }, color: 0xe74c3c, type: "workstation" },
+                { start: { x: -13, y: 1, z: 8 }, end: { x: -13, y: 1, z: 10 }, color: 0xe74c3c, type: "workstation" },
+                { start: { x: -16, y: 1, z: 8 }, end: { x: -16, y: 1, z: 10 }, color: 0xe74c3c, type: "workstation" },
+                { start: { x: -19, y: 1, z: 8 }, end: { x: -19, y: 1, z: 10 }, color: 0xe74c3c, type: "workstation" },
+                
+                // 從縫紉區返回檢測機的軌道
+                { start: { x: -18, y: 1, z: 11 }, end: { x: -10, y: 1, z: 11 }, color: 0xf39c12, type: "return" },
+                { start: { x: -10, y: 1, z: 11 }, end: { x: -10, y: 4, z: 11 }, color: 0x2ecc71, type: "vertical" },
+                { start: { x: -10, y: 4, z: 11 }, end: { x: 10, y: 4, z: -2 }, color: 0xf39c12, type: "return" },
+                { start: { x: 10, y: 4, z: -2 }, end: { x: 10, y: 1, z: -2 }, color: 0x2ecc71, type: "vertical" },
+                { start: { x: 10, y: 1, z: -2 }, end: { x: 12, y: 1, z: -5 }, color: 0xf39c12, type: "return" },
+                
+                // 從檢測機到包裝區的軌道
+                { start: { x: 15, y: 1, z: -5 }, end: { x: 15, y: 4, z: -5 }, color: 0x2ecc71, type: "vertical" },
+                { start: { x: 15, y: 4, z: -5 }, end: { x: 15, y: 4, z: 8 }, color: 0x3498db, type: "main" },
+                { start: { x: 15, y: 4, z: 8 }, end: { x: 15, y: 1, z: 8 }, color: 0x2ecc71, type: "vertical" },
+                { start: { x: 15, y: 1, z: 8 }, end: { x: 0, y: 1, z: 8 }, color: 0x3498db, type: "main" },
+                
+                // 包裝區到成品輸出
+                { start: { x: 0, y: 1, z: 8 }, end: { x: 5, y: 1, z: 8 }, color: 0xf39c12, type: "output" }
+            ];
+            
+            // 創建軌道段
+            trackSegments.forEach(segment => {
+                createTrackSegment(segment);
+            });
+            
+            // 創建軌道連接點（節點）
+            createTrackNodes();
+        }
+        
+        // 創建軌道段
+        function createTrackSegment(segment) {
+            const { start, end, color, type } = segment;
+            
+            // 計算軌道長度和方向
+            const length = Math.sqrt(
+                Math.pow(end.x - start.x, 2) + 
+                Math.pow(end.y - start.y, 2) + 
+                Math.pow(end.z - start.z, 2)
+            );
+            
+            // 計算中間點
+            const midX = (start.x + end.x) / 2;
+            const midY = (start.y + end.y) / 2;
+            const midZ = (start.z + end.z) / 2;
+            
+            // 創建軌道幾何體
+            let geometry;
+            if (start.y !== end.y) {
+                // 垂直軌道
+                geometry = new THREE.CylinderGeometry(0.05, 0.05, length, 8);
+            } else {
+                // 水平軌道
+                geometry = new THREE.CylinderGeometry(0.05, 0.05, length, 8);
+            }
+            
+            const material = new THREE.MeshLambertMaterial({ color: color });
+            const track = new THREE.Mesh(geometry, material);
+            
+            // 設置軌道位置和旋轉
+            track.position.set(midX, midY, midZ);
+            
+            // 計算旋轉以對齊軌道方向
+            const direction = new THREE.Vector3(
+                end.x - start.x,
+                end.y - start.y,
+                end.z - start.z
+            ).normalize();
+            
+            track.quaternion.setFromUnitVectors(
+                new THREE.Vector3(0, 1, 0),
+                direction
+            );
+            
+            scene.add(track);
+            trackObjects.push(track);
+            secondFloorObjects.push(track);
+            
+            // 添加軌道動畫效果（流動光點）
+            if (type === "main" || type === "return") {
+                createTrackAnimation(start, end, color);
+            }
+        }
+        
+        // 創建軌道動畫效果
+        function createTrackAnimation(start, end, color) {
+            // 創建動畫光點
+            const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: color,
+                transparent: true,
+                opacity: 0.8
+            });
+            const lightDot = new THREE.Mesh(geometry, material);
+            
+            // 設置初始位置
+            lightDot.position.set(start.x, start.y, start.z);
+            lightDot.userData = {
+                start: start,
+                end: end,
+                progress: 0,
+                direction: 1 // 1: 正向, -1: 反向
+            };
+            
+            scene.add(lightDot);
+            trackObjects.push(lightDot);
+            secondFloorObjects.push(lightDot);
+        }
+        
+        // 創建軌道連接點（節點）
+        function createTrackNodes() {
+            // 定義重要連接點
+            const nodes = [
+                { position: { x: -14, y: 1, z: -5 }, type: "junction" },
+                { position: { x: -14, y: 4, z: -5 }, type: "junction" },
+                { position: { x: 2, y: 4, z: -5 }, type: "junction" },
+                { position: { x: 2, y: 1, z: -5 }, type: "junction" },
+                { position: { x: 12, y: 1, z: -5 }, type: "junction" },
+                { position: { x: 15, y: 1, z: -5 }, type: "junction" },
+                { position: { x: 15, y: 4, z: -5 }, type: "junction" },
+                { position: { x: 15, y: 4, z: 8 }, type: "junction" },
+                { position: { x: 15, y: 1, z: 8 }, type: "junction" },
+                { position: { x: -8, y: 1, z: 8 }, type: "junction" },
+                { position: { x: -10, y: 1, z: 11 }, type: "junction" },
+                { position: { x: -10, y: 4, z: 11 }, type: "junction" },
+                { position: { x: 10, y: 4, z: -2 }, type: "junction" },
+                { position: { x: 10, y: 1, z: -2 }, type: "junction" },
+                { position: { x: 0, y: 1, z: 8 }, type: "junction" }
+            ];
+            
+            nodes.forEach(node => {
+                createTrackNode(node);
+            });
+        }
+        
+        // 創建軌道節點
+        function createTrackNode(node) {
+            const { position, type } = node;
+            
+            const geometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const material = new THREE.MeshLambertMaterial({ 
+                color: type === "junction" ? 0x34495e : 0xe74c3c
+            });
+            const nodeObj = new THREE.Mesh(geometry, material);
+            
+            nodeObj.position.set(position.x, position.y, position.z);
+            scene.add(nodeObj);
+            trackObjects.push(nodeObj);
+            secondFloorObjects.push(nodeObj);
+        }
+        
+        // 更新軌道動畫
+        function updateTrackAnimation(delta) {
+            trackObjects.forEach(obj => {
+                if (obj.userData && obj.userData.start) {
+                    const { start, end, progress, direction } = obj.userData;
+                    
+                    // 更新進度
+                    const newProgress = progress + delta * trackSpeed * 0.1 * direction;
+                    
+                    if (newProgress >= 1) {
+                        obj.userData.progress = 0;
+                        obj.userData.direction = -1; // 反向
+                    } else if (newProgress <= 0) {
+                        obj.userData.progress = 0;
+                        obj.userData.direction = 1; // 正向
+                    } else {
+                        obj.userData.progress = newProgress;
+                    }
+                    
+                    // 更新位置
+                    obj.position.x = start.x + (end.x - start.x) * obj.userData.progress;
+                    obj.position.y = start.y + (end.y - start.y) * obj.userData.progress;
+                    obj.position.z = start.z + (end.z - start.z) * obj.userData.progress;
+                }
+            });
+        }
+        
+        // 添加設備模型
+        function addEquipmentModels() {
+            // 添加數位直噴印刷系統
+            const printerGeometry = new THREE.CylinderGeometry(0.5, 0.5, 4, 16);
+            const printerMaterial = new THREE.MeshLambertMaterial({ color: 0x34495e });
+            const printer = new THREE.Mesh(printerGeometry, printerMaterial);
+            printer.position.set(-18, 2, -5);
+            scene.add(printer);
+            secondFloorObjects.push(printer);
+            
+            // 添加數位直噴印刷系統標籤
+            addMachineLabel(
+                printer, 
+                "數位直噴印刷系統", 
+                "工作寬度: 1.6米\n印刷精度: ±0.1mm\n生產速度: 每小時120米"
+            );
+            
+            // 添加熱轉印加工系統
+            const heatPressGeometry = new THREE.BoxGeometry(2, 1.5, 1.5);
+            const heatPressMaterial = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
+            const heatPress = new THREE.Mesh(heatPressGeometry, heatPressMaterial);
+            heatPress.position.set(-14, 0.75, -5);
+            scene.add(heatPress);
+            secondFloorObjects.push(heatPress);
+            
+            // 添加熱轉印加工系統標籤
+            addMachineLabel(
+                heatPress, 
+                "熱轉印加工系統", 
+                "工作溫度: 150-200°C\n轉印壓力: 0.2-0.5MPa\n生產速度: 每小時80件"
+            );
+            
+            // 添加激光切割與視覺檢測系統
+            const cutterGeometry = new THREE.BoxGeometry(3, 1, 2);
+            const cutterMaterial = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
+            const cutter = new THREE.Mesh(cutterGeometry, cutterMaterial);
+            cutter.position.set(2, 0.5, -5);
+            scene.add(cutter);
+            secondFloorObjects.push(cutter);
+            
+            // 添加激光切割與視覺檢測系統標籤
+            addMachineLabel(
+                cutter, 
+                "激光切割與視覺檢測系統", 
+                "切割精度: ±0.5mm\n最大速度: 2米/秒\n自動封邊功能"
+            );
+            
+            // 添加智能產線整合方案
+            const inspectionBaseGeometry = new THREE.BoxGeometry(4, 0.5, 6);
+            const inspectionBaseMaterial = new THREE.MeshLambertMaterial({ color: 0x34495e });
+            const inspectionBase = new THREE.Mesh(inspectionBaseGeometry, inspectionBaseMaterial);
+            inspectionBase.position.set(12, 0.25, -5);
+            scene.add(inspectionBase);
+            secondFloorObjects.push(inspectionBase);
+            
+            const inspectionBodyGeometry = new THREE.BoxGeometry(3, 2, 4);
+            const inspectionBodyMaterial = new THREE.MeshLambertMaterial({ color: 0x9b59b6 });
+            const inspectionBody = new THREE.Mesh(inspectionBodyGeometry, inspectionBodyMaterial);
+            inspectionBody.position.set(12, 1.5, -5);
+            scene.add(inspectionBody);
+            secondFloorObjects.push(inspectionBody);
+            
+            const inspectionHeadGeometry = new THREE.CylinderGeometry(0.8, 0.8, 1, 16);
+            const inspectionHeadMaterial = new THREE.MeshLambertMaterial({ color: 0x3498db });
+            const inspectionHead = new THREE.Mesh(inspectionHeadGeometry, inspectionHeadMaterial);
+            inspectionHead.position.set(12, 3, -5);
+            scene.add(inspectionHead);
+            secondFloorObjects.push(inspectionHead);
+            
+            // 存儲檢測機引用
+            unifiedInspectionMachine = {
+                base: inspectionBase,
+                body: inspectionBody,
+                head: inspectionHead
+            };
+            
+            // 添加智能產線整合方案標籤
+            addMachineLabel(
+                inspectionBody, 
+                "智能產線整合方案", 
+                "雙模式檢測: 裁片/成品\n檢測精度: 0.1mm\n處理速度: 每分鐘60件"
+            );
+            
+            // 添加自動化包裝設備
+            const packerGeometry = new THREE.BoxGeometry(2, 2, 2);
+            const packerMaterial = new THREE.MeshLambertMaterial({ color: 0xf39c12 });
+            const packer = new THREE.Mesh(packerGeometry, packerMaterial);
+            packer.position.set(0, 1, 8);
+            scene.add(packer);
+            secondFloorObjects.push(packer);
+            
+            // 添加自動化包裝設備標籤
+            addMachineLabel(
+                packer, 
+                "自動化包裝設備", 
+                "包裝速度: 每分鐘30件\n自動貼標功能\n智能碼垛系統"
+            );
+        }
+        
+        // 添加機器標籤
+        function addMachineLabel(machine, title, details) {
+            const labelElement = document.createElement('div');
+            labelElement.className = 'machine-label';
+            labelElement.innerHTML = `
+                <div class="label-title">${title}</div>
+                <div class="label-details">${details}</div>
+            `;
+            document.body.appendChild(labelElement);
+            
+            // 存儲標籤信息
+            machineLabels.push({
+                element: labelElement,
+                machine: machine,
+                title: title,
+                details: details
+            });
+            
+            // 添加點擊事件來展開/收起標籤
+            labelElement.addEventListener('click', function(e) {
+                e.stopPropagation();
+                this.classList.toggle('expanded');
+            });
+        }
+        
+        // 更新機器標籤位置
+        function updateMachineLabels() {
+            machineLabels.forEach(labelInfo => {
+                const { element, machine } = labelInfo;
+                const vector = new THREE.Vector3();
+                
+                // 獲取機器在世界坐標系中的位置
+                machine.getWorldPosition(vector);
+                
+                // 將3D坐標轉換為屏幕坐標
+                vector.project(camera);
+                
+                const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-(vector.y * 0.5) + 0.5) * window.innerHeight;
+                
+                // 設置標籤位置
+                element.style.left = `${x}px`;
+                element.style.top = `${y}px`;
+            });
+        }
+        
+        // 創建縫紉工作站
+        function createSewingStations() {
+            // 定義縫紉工作站位置和類型
+            const stations = [
+                { 
+                    name: "機器人上料", 
+                    position: { x: -8, y: 1, z: 8 }, 
+                    type: "loading",
+                    details: "6軸工業機器人\n視覺定位系統\n自動裁片配套"
+                },
+                { 
+                    name: "自動上袖", 
+                    position: { x: -10, y: 1, z: 10 }, 
+                    type: "sleeve",
+                    details: "精準定位系統\n自動縫紉單元\n質量檢測傳感器"
+                },
+                { 
+                    name: "合肩壓條", 
+                    position: { x: -13, y: 1, z: 10 }, 
+                    type: "shoulder",
+                    details: "雙針縫紉機\n自動壓條系統\n張力控制裝置"
+                },
+                { 
+                    name: "精準上領", 
+                    position: { x: -16, y: 1, z: 10 }, 
+                    type: "collar",
+                    details: "高精度定位\n自動剪線功能\n實時質量監控"
+                },
+                { 
+                    name: "縫下擺", 
+                    position: { x: -19, y: 1, z: 10 }, 
+                    type: "hem",
+                    details: "自動收邊系統\n雙線鎖邊\n智能斷線檢測"
+                }
+            ];
+            
+            stations.forEach(station => {
+                createSewingStation(station);
+            });
+        }
+        
+        // 創建縫紉工作站
+        function createSewingStation(station) {
+            const { name, position, type, details } = station;
+            
+            // 創建工作站底座
+            const baseGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 16);
+            const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.set(position.x, position.y, position.z);
+            scene.add(base);
+            secondFloorObjects.push(base);
+            
+            // 根據工作站類型創建不同設備
+            let equipment;
+            let equipmentColor;
+            switch(type) {
+                case "loading":
+                    // 機器人上料站
+                    const robotArmGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 8);
+                    equipmentColor = 0xe74c3c;
+                    const robotArmMaterial = new THREE.MeshLambertMaterial({ color: equipmentColor });
+                    equipment = new THREE.Mesh(robotArmGeometry, robotArmMaterial);
+                    equipment.rotation.x = Math.PI / 2;
+                    break;
+                case "sleeve":
+                    // 上袖工作站
+                    const sleeveGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+                    equipmentColor = 0x3498db;
+                    const sleeveMaterial = new THREE.MeshLambertMaterial({ color: equipmentColor });
+                    equipment = new THREE.Mesh(sleeveGeometry, sleeveMaterial);
+                    break;
+                case "shoulder":
+                    // 合肩工作站
+                    const shoulderGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.4);
+                    equipmentColor = 0x2ecc71;
+                    const shoulderMaterial = new THREE.MeshLambertMaterial({ color: equipmentColor });
+                    equipment = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
+                    break;
+                case "collar":
+                    // 上領工作站
+                    const collarGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
+                    equipmentColor = 0xf39c12;
+                    const collarMaterial = new THREE.MeshLambertMaterial({ color: equipmentColor });
+                    equipment = new THREE.Mesh(collarGeometry, collarMaterial);
+                    break;
+                case "hem":
+                    // 縫下擺工作站
+                    const hemGeometry = new THREE.BoxGeometry(0.5, 0.1, 0.5);
+                    equipmentColor = 0x9b59b6;
+                    const hemMaterial = new THREE.MeshLambertMaterial({ color: equipmentColor });
+                    equipment = new THREE.Mesh(hemGeometry, hemMaterial);
+                    break;
+            }
+            
+            if (equipment) {
+                equipment.position.set(position.x, position.y + 0.5, position.z);
+                scene.add(equipment);
+                secondFloorObjects.push(equipment);
+                
+                // 為縫紉工作站添加標籤
+                addMachineLabel(equipment, name, details);
+            }
+        }
+        
+        // 創建電路圖風格物料流動路徑點
+        function createCircuitStyleMaterialFlowPath() {
+            // 定義物料流動路徑點 - 對齊到電路圖風格軌道
+            const pathPoints = [
+                { x: -22, y: 1, z: -5 },  // 起點 - 原料區
+                { x: -14, y: 1, z: -5 },  // 印刷完成
+                { x: -14, y: 4, z: -5 },  // 垂直提升
+                { x: 2, y: 4, z: -5 },    // 高位傳輸
+                { x: 2, y: 1, z: -5 },    // 垂直下降
+                { x: 6, y: 1, z: -5 },    // 裁剪完成
+                { x: 12, y: 1, z: -5 },   // 前往檢測機
+                { x: 15, y: 1, z: -5 },   // 檢測機（第一次：裁片檢測）
+                { x: 15, y: 4, z: -5 },   // 垂直提升
+                { x: 15, y: 4, z: 8 },    // 高位傳輸
+                { x: 15, y: 1, z: 8 },    // 垂直下降
+                { x: -8, y: 1, z: 8 },    // 進入縫紉區
+                { x: -10, y: 1, z: 8 },   // 機器人上料
+                { x: -10, y: 1, z: 10 },  // 自動上袖工位
+                { x: -13, y: 1, z: 10 },  // 合肩壓條工位
+                { x: -16, y: 1, z: 10 },  // 精準上領工位
+                { x: -19, y: 1, z: 10 },  // 縫下擺工位
+                { x: -18, y: 1, z: 11 },  // 縫紉完成
+                { x: -10, y: 1, z: 11 },  // 前往檢測機（返回）
+                { x: -10, y: 4, z: 11 },  // 垂直提升
+                { x: 10, y: 4, z: -2 },   // 高位傳輸
+                { x: 10, y: 1, z: -2 },   // 垂直下降
+                { x: 12, y: 1, z: -5 },   // 檢測機（第二次：成品檢測）
+                { x: 15, y: 1, z: -5 },   // 檢測完成
+                { x: 15, y: 4, z: -5 },   // 垂直提升
+                { x: 15, y: 4, z: 8 },    // 高位傳輸
+                { x: 15, y: 1, z: 8 },    // 垂直下降
+                { x: 0, y: 1, z: 8 },     // 包裝區
+                { x: 5, y: 1, z: 8 }      // 成品輸出
+            ];
+            
+            // 存儲路徑點供模擬使用
+            scene.userData.materialPath = pathPoints;
+        }
+        
+        // 更新樓層可見性
+        function updateFloorVisibility() {
+            firstFloorObjects.forEach(obj => {
+                obj.visible = (currentFloorView === 'first' || currentFloorView === 'both');
+            });
+            
+            secondFloorObjects.forEach(obj => {
+                obj.visible = (currentFloorView === 'second' || currentFloorView === 'both');
+            });
+            
+            // 升降機始終可見
+            if (elevatorObject) {
+                elevatorObject.visible = true;
+            }
+        }
+        
+        // 更新AGV動畫
+        function updateAGVAnimation(delta) {
+            if (!simulationRunning) return;
+            
+            agvObjects.forEach(agv => {
+                const userData = agv.userData;
+                const pathPoints = userData.pathPoints;
+                
+                if (userData.currentTarget < pathPoints.length - 1) {
+                    const currentPoint = userData.currentTarget;
+                    const nextPoint = currentPoint + 1;
+                    
+                    const start = pathPoints[currentPoint];
+                    const end = pathPoints[nextPoint];
+                    
+                    const newProgress = userData.progress + delta * simulationSpeed * 0.1;
+                    
+                    if (newProgress >= 1) {
+                        // 到達目標點
+                        userData.currentTarget = nextPoint;
+                        userData.progress = 0;
+                        
+                        // 在特定點執行操作
+                        if (nextPoint === 0) { // 卸貨區
+                            // 裝載原料
+                            userData.carryingMaterial = true;
+                            userData.materialType = 'raw';
+                        } else if (nextPoint === 2) { // 倉庫區
+                            // 卸下原料
+                            userData.carryingMaterial = false;
+                            userData.materialType = null;
+                        } else if (nextPoint === 3) { // 成品倉庫
+                            // 裝載成品
+                            userData.carryingMaterial = true;
+                            userData.materialType = 'finished';
+                        } else if (nextPoint === 5) { // 出貨區
+                            // 卸下成品
+                            userData.carryingMaterial = false;
+                            userData.materialType = null;
+                            
+                            // 返回卸貨區
+                            userData.currentTarget = 0;
+                        }
+                    } else {
+                        userData.progress = newProgress;
+                        
+                        // 計算新位置
+                        agv.position.x = start.x + (end.x - start.x) * newProgress;
+                        agv.position.z = start.z + (end.z - start.z) * newProgress;
+                        
+                        // 計算旋轉以對齊方向
+                        const directionX = end.x - start.x;
+                        const directionZ = end.z - start.z;
+                        const angle = Math.atan2(directionZ, directionX);
+                        agv.rotation.y = -angle;
+                    }
+                }
+            });
+        }
+        
+        // 更新升降機動畫
+        function updateElevatorAnimation(delta) {
+            if (!simulationRunning || !elevatorObject) return;
+            
+            const userData = elevatorObject.userData;
+            
+            if (userData.moving) {
+                const targetY = userData.targetFloor === 'first' ? -5 : 0;
+                const direction = targetY > elevatorObject.position.y ? 1 : -1;
+                const newY = elevatorObject.position.y + delta * simulationSpeed * 2 * direction;
+                
+                if ((direction > 0 && newY >= targetY) || (direction < 0 && newY <= targetY)) {
+                    // 到達目標樓層
+                    elevatorObject.position.y = targetY;
+                    userData.moving = false;
+                    userData.currentFloor = userData.targetFloor;
+                } else {
+                    elevatorObject.position.y = newY;
+                }
+            } else {
+                // 隨機觸發升降機移動
+                if (Math.random() < 0.01) {
+                    userData.targetFloor = userData.currentFloor === 'first' ? 'second' : 'first';
+                    userData.moving = true;
+                }
+            }
+        }
+        
+        // 更新卸貨動畫
+        function updateUnloadingAnimation(delta) {
+            if (!simulationRunning) return;
+            
+            unloadingTimer += delta;
+            
+            // 根據卸貨頻率觸發卸貨
+            if (unloadingTimer > 10 / unloadingFrequency) {
+                unloadingTimer = 0;
+                
+                // 模擬卸貨過程
+                // 這裡可以添加卸貨動畫效果
+            }
+        }
+        
+        // 開始物料流動模擬
+        function startMaterialFlow() {
+            // 清除現有物料對象
+            materialObjects.forEach(obj => scene.remove(obj));
+            materialObjects = [];
+            
+            // 創建多個物料對象，模擬連續生產
+            for (let i = 0; i < 5; i++) {
+                createMaterialObject(i);
+            }
+            
+            // 更新進度條
+            updateProgress(0);
+        }
+        
+        // 創建物料對象
+        function createMaterialObject(delay) {
+            const pathPoints = scene.userData.materialPath;
+            if (!pathPoints) return;
+            
+            // 創建物料幾何體 - 從布捲到成品球衣的變化
+            const materialGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16);
+            const material = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const materialObj = new THREE.Mesh(materialGeometry, material);
+            
+            // 設置初始位置
+            materialObj.position.set(pathPoints[0].x, pathPoints[0].y, pathPoints[0].z);
+            materialObj.userData.currentPoint = 0;
+            materialObj.userData.progress = 0;
+            materialObj.userData.delay = delay * 2; // 每個物料延遲2秒
+            materialObj.userData.components = []; // 存儲縫紉組件
+            materialObj.userData.inspectionPassed = true; // 檢測結果
+            materialObj.userData.isFinishedProduct = false; // 是否為成品
+            
+            scene.add(materialObj);
+            materialObjects.push(materialObj);
+            secondFloorObjects.push(materialObj);
+            
+            // 創建動畫混合器
+            const mixer = new THREE.AnimationMixer(materialObj);
+            animationMixers.push(mixer);
+        }
+        
+        // 更新物料流動
+        function updateMaterialFlow(delta) {
+            if (!simulationRunning) return;
+            
+            const pathPoints = scene.userData.materialPath;
+            if (!pathPoints) return;
+            
+            let totalProgress = 0;
+            let activeMaterials = 0;
+            
+            materialObjects.forEach((materialObj, index) => {
+                // 應用延遲
+                if (materialObj.userData.delay > 0) {
+                    materialObj.userData.delay -= delta;
+                    return;
+                }
+                
+                activeMaterials++;
+                
+                const currentPoint = materialObj.userData.currentPoint;
+                const progress = materialObj.userData.progress;
+                
+                if (currentPoint < pathPoints.length - 1) {
+                    // 計算下一個點
+                    const nextPoint = currentPoint + 1;
+                    
+                    // 更新位置 - 線性插值
+                    const start = pathPoints[currentPoint];
+                    const end = pathPoints[nextPoint];
+                    
+                    const newProgress = progress + delta * simulationSpeed * 0.1;
+                    
+                    if (newProgress >= 1) {
+                        // 移動到下一個點
+                        materialObj.userData.currentPoint = nextPoint;
+                        materialObj.userData.progress = 0;
+                        
+                        // 在檢測機位置執行檢測
+                        if (nextPoint === 7 || nextPoint === 22) { // 兩次經過檢測機
+                            performInspection(materialObj, nextPoint);
+                        }
+                        
+                        // 在縫紉完成後標記為成品
+                        if (nextPoint === 17) {
+                            materialObj.userData.isFinishedProduct = true;
+                        }
+                        
+                        // 在不同區域改變物料外觀
+                        updateMaterialAppearance(materialObj, nextPoint);
+                        
+                        // 在縫紉區創建組件
+                        if (nextPoint === 12) { // 機器人上料點
+                            createSewingComponents(materialObj);
+                        }
+                    } else {
+                        materialObj.userData.progress = newProgress;
+                        
+                        // 計算新位置
+                        materialObj.position.x = start.x + (end.x - start.x) * newProgress;
+                        materialObj.position.y = start.y + (end.y - start.y) * newProgress;
+                        materialObj.position.z = start.z + (end.z - start.z) * newProgress;
+                        
+                        // 更新縫紉組件位置
+                        updateSewingComponents(materialObj, newProgress, currentPoint, nextPoint);
+                    }
+                } else {
+                    // 物料到達終點，重置到起點
+                    resetMaterialObject(materialObj);
+                }
+                
+                // 計算總進度
+                totalProgress += materialObj.userData.currentPoint / (pathPoints.length - 1);
+            });
+            
+            // 更新總進度條
+            if (activeMaterials > 0) {
+                const avgProgress = totalProgress / activeMaterials;
+                updateProgress(avgProgress * 100);
+            }
+        }
+        
+        // 執行檢測
+        function performInspection(materialObj, pointIndex) {
+            // 根據是否為成品切換檢測模式
+            if (materialObj.userData.isFinishedProduct) {
+                inspectionMode = 'finished';
+                // 成品檢測 - 較寬鬆的標準
+                materialObj.userData.inspectionPassed = Math.random() > 0.15; // 85%通過率
+            } else {
+                inspectionMode = 'cut';
+                // 裁片檢測 - 較嚴格的標準
+                materialObj.userData.inspectionPassed = Math.random() > 0.1; // 90%通過率
+            }
+            
+            // 更新檢測機外觀
+            updateInspectionMachineAppearance();
+            
+            // 根據檢測結果改變物料顏色
+            if (materialObj.userData.inspectionPassed) {
+                materialObj.material.color.set(0x2ecc71); // 綠色 - 合格
+            } else {
+                materialObj.material.color.set(0xe74c3c); // 紅色 - 不合格
+                
+                // 不合格產品在下次更新時移除
+                setTimeout(() => {
+                    if (materialObj.parent) {
+                        scene.remove(materialObj);
+                        if (materialObj.userData.components) {
+                            materialObj.userData.components.forEach(comp => {
+                                if (comp.parent) scene.remove(comp);
+                            });
+                        }
+                    }
+                }, 1000);
+            }
+            
+            // 顯示檢測狀態
+            showInspectionStatus(materialObj, pointIndex);
+        }
+        
+        // 更新檢測機外觀
+        function updateInspectionMachineAppearance() {
+            if (!unifiedInspectionMachine) return;
+            
+            if (inspectionMode === 'cut') {
+                // 裁片檢測模式 - 藍色
+                unifiedInspectionMachine.head.material.color.set(0x3498db);
+            } else {
+                // 成品檢測模式 - 紫色
+                unifiedInspectionMachine.head.material.color.set(0x9b59b6);
+            }
+        }
+        
+        // 顯示檢測狀態
+        function showInspectionStatus(materialObj, pointIndex) {
+            const pathPoints = scene.userData.materialPath;
+            const point = pathPoints[pointIndex];
+            
+            // 創建狀態標籤
+            const status = materialObj.userData.inspectionPassed ? '合格' : '不合格';
+            const mode = inspectionMode === 'cut' ? '裁片檢測' : '成品檢測';
+            const color = materialObj.userData.inspectionPassed ? 0x2ecc71 : 0xe74c3c;
+            
+            // 創建canvas繪製文本
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 200;
+            canvas.height = 80;
+            
+            context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            context.font = 'Bold 16px Arial';
+            context.fillStyle = 'white';
+            context.textAlign = 'center';
+            context.fillText(`${mode}: ${status}`, canvas.width / 2, 35);
+            
+            context.font = '12px Arial';
+            context.fillStyle = materialObj.userData.inspectionPassed ? '#2ecc71' : '#e74c3c';
+            context.fillText(
+                materialObj.userData.isFinishedProduct ? '成品球衣' : '裁片', 
+                canvas.width / 2, 
+                55
+            );
+            
+            // 創建紋理
+            const texture = new THREE.CanvasTexture(canvas);
+            const labelMaterial = new THREE.SpriteMaterial({ 
+                map: texture,
+                transparent: true
+            });
+            
+            // 創建精靈
+            const label = new THREE.Sprite(labelMaterial);
+            label.position.set(point.x, point.y + 2, point.z);
+            label.scale.set(5, 2, 1);
+            scene.add(label);
+            secondFloorObjects.push(label);
+            
+            // 3秒後移除標籤
+            setTimeout(() => {
+                if (label.parent) scene.remove(label);
+            }, 3000);
+        }
+        
+        // 創建縫紉組件
+        function createSewingComponents(materialObj) {
+            // 清除現有組件
+            removeSewingComponents(materialObj);
+            
+            // 創建不同顏色的縫紉組件
+            const components = [
+                { type: "body", color: 0xe74c3c, position: { x: 0, y: 0.3, z: 0 } }, // 衣身 - 紅色
+                { type: "sleeve", color: 0x3498db, position: { x: -0.5, y: 0.5, z: 0 } }, // 袖子 - 藍色
+                { type: "sleeve", color: 0x3498db, position: { x: 0.5, y: 0.5, z: 0 } }, // 袖子 - 藍色
+                { type: "collar", color: 0x2ecc71, position: { x: 0, y: 0.8, z: 0 } } // 領子 - 綠色
+            ];
+            
+            components.forEach(comp => {
+                let geometry;
+                if (comp.type === "collar") {
+                    geometry = new THREE.TorusGeometry(0.2, 0.05, 8, 16);
+                } else if (comp.type === "sleeve") {
+                    geometry = new THREE.CylinderGeometry(0.1, 0.1, 0.3, 8);
+                } else {
+                    geometry = new THREE.BoxGeometry(0.4, 0.5, 0.2);
+                }
+                
+                const material = new THREE.MeshLambertMaterial({ color: comp.color });
+                const component = new THREE.Mesh(geometry, material);
+                
+                component.position.set(
+                    materialObj.position.x + comp.position.x,
+                    materialObj.position.y + comp.position.y,
+                    materialObj.position.z + comp.position.z
+                );
+                
+                scene.add(component);
+                materialObj.userData.components.push(component);
+                secondFloorObjects.push(component);
+            });
+            
+            // 隱藏主物料對象，只顯示組件
+            materialObj.visible = false;
+        }
+        
+        // 更新縫紉組件位置
+        function updateSewingComponents(materialObj, progress, currentPoint, nextPoint) {
+            if (materialObj.userData.components.length === 0) return;
+            
+            const pathPoints = scene.userData.materialPath;
+            const start = pathPoints[currentPoint];
+            const end = pathPoints[nextPoint];
+            
+            // 計算主物料位置
+            const mainX = start.x + (end.x - start.x) * progress;
+            const mainY = start.y + (end.y - start.y) * progress;
+            const mainZ = start.z + (end.z - start.z) * progress;
+            
+            // 更新每個組件的位置
+            materialObj.userData.components.forEach((component, index) => {
+                let offsetX = 0, offsetY = 0, offsetZ = 0;
+                
+                // 根據縫紉工位調整組件位置，模擬縫合過程
+                if (nextPoint >= 13 && nextPoint <= 16) { // 縫紉工位範圍
+                    const sewingProgress = (nextPoint - 12) / 4; // 縫紉進度 0-1
+                    
+                    switch(index) {
+                        case 0: // 衣身
+                            // 衣身基本不動
+                            break;
+                        case 1: // 左袖子
+                            offsetX = -0.3 * sewingProgress;
+                            offsetY = 0.1 * sewingProgress;
+                            break;
+                        case 2: // 右袖子
+                            offsetX = 0.3 * sewingProgress;
+                            offsetY = 0.1 * sewingProgress;
+                            break;
+                        case 3: // 領子
+                            offsetY = -0.2 * sewingProgress;
+                            break;
+                    }
+                }
+                
+                component.position.x = mainX + offsetX;
+                component.position.y = mainY + offsetY;
+                component.position.z = mainZ + offsetZ;
+            });
+            
+            // 在縫紉完成後，將組件合併為成品
+            if (nextPoint === 17) { // 縫紉完成點
+                materialObj.userData.components.forEach(component => {
+                    component.material.color.set(0xf39c12); // 全部變為成品顏色
+                });
+                
+                // 顯示主物料對象（現在代表成品）
+                materialObj.visible = true;
+                materialObj.material.color.set(0xf39c12);
+                
+                // 改變形狀為立方體（包裝好的球衣）
+                if (materialObj.geometry.type !== 'BoxGeometry') {
+                    const boxGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+                    materialObj.geometry.dispose();
+                    materialObj.geometry = boxGeometry;
+                }
+            }
+        }
+        
+        // 移除縫紉組件
+        function removeSewingComponents(materialObj) {
+            materialObj.userData.components.forEach(component => {
+                scene.remove(component);
+            });
+            materialObj.userData.components = [];
+            materialObj.visible = true;
+        }
+        
+        // 重置物料對象
+        function resetMaterialObject(materialObj) {
+            const pathPoints = scene.userData.materialPath;
+            
+            materialObj.userData.currentPoint = 0;
+            materialObj.userData.progress = 0;
+            materialObj.position.set(pathPoints[0].x, pathPoints[0].y, pathPoints[0].z);
+            materialObj.material.color.set(0xffffff); // 重置顏色
+            materialObj.userData.inspectionPassed = true;
+            materialObj.userData.isFinishedProduct = false;
+            
+            // 重置形狀
+            if (materialObj.geometry.type !== 'CylinderGeometry') {
+                const cylinderGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16);
+                materialObj.geometry.dispose();
+                materialObj.geometry = cylinderGeometry;
+            }
+            
+            // 移除縫紉組件
+            removeSewingComponents(materialObj);
+        }
+        
+        // 更新物料外觀
+        function updateMaterialAppearance(materialObj, pointIndex) {
+            // 根據所在區域改變物料外觀
+            if (pointIndex >= 1 && pointIndex <= 4) {
+                // 印刷區 - 變成藍色（印刷後）
+                materialObj.material.color.set(0x3498db);
+            } else if (pointIndex >= 5 && pointIndex <= 6) {
+                // 傳輸和裁剪區 - 變成綠色（裁剪後）
+                materialObj.material.color.set(0x2ecc71);
+            } else if (pointIndex >= 12 && pointIndex <= 16) {
+                // 縫紉區 - 變成紅色（縫紉中）
+                materialObj.material.color.set(0xe74c3c);
+            } else if (pointIndex >= 27) {
+                // 包裝區 - 變成橙色（成品）
+                materialObj.material.color.set(0xf39c12);
+            }
+        }
+        
+        // 更新進度條
+        function updateProgress(percent) {
+            const progressBar = document.getElementById('simProgress');
+            progressBar.style.width = percent + '%';
+        }
+        
+        // 設置事件監聽
+        function setupEventListeners() {
+            // 控制面板顯示/隱藏
+            document.getElementById('hidePanel').addEventListener('click', togglePanel);
+            document.getElementById('togglePanel').addEventListener('click', togglePanel);
+            
+            // 模擬控制按鈕
+            document.getElementById('playSim').addEventListener('click', startSimulation);
+            document.getElementById('pauseSim').addEventListener('click', pauseSimulation);
+            document.getElementById('resetSim').addEventListener('click', resetSimulation);
+            
+            // 樓層選擇按鈕
+            document.getElementById('showFirstFloor').addEventListener('click', function() {
+                setFloorView('first');
+            });
+            document.getElementById('showSecondFloor').addEventListener('click', function() {
+                setFloorView('second');
+            });
+            document.getElementById('showBothFloors').addEventListener('click', function() {
+                setFloorView('both');
+            });
+            
+            // 滑塊控制
+            document.getElementById('simSpeed').addEventListener('input', function(e) {
+                const value = e.target.value;
+                simulationSpeed = value;
+                document.getElementById('speedValue').textContent = 
+                    value < 3 ? '慢速' : value < 7 ? '正常' : '快速';
+            });
+            
+            document.getElementById('trackSpeed').addEventListener('input', function(e) {
+                const value = e.target.value;
+                trackSpeed = value;
+                document.getElementById('trackSpeedValue').textContent = 
+                    value < 3 ? '慢速' : value < 7 ? '正常' : '快速';
+            });
+            
+            document.getElementById('unloadingFrequency').addEventListener('input', function(e) {
+                const value = e.target.value;
+                unloadingFrequency = value;
+                document.getElementById('unloadingValue').textContent = 
+                    value < 3 ? '低頻' : value < 7 ? '正常' : '高頻';
+            });
+            
+            document.getElementById('zoomLevel').addEventListener('input', function(e) {
+                const value = e.target.value;
+                document.getElementById('zoomValue').textContent = value + '%';
+                camera.zoom = value / 50;
+                camera.updateProjectionMatrix();
+            });
+            
+            // 複選框控制
+            document.getElementById('showCircuitStyle').addEventListener('change', function(e) {
+                trackObjects.forEach(obj => {
+                    obj.visible = e.target.checked;
+                });
+            });
+            
+            document.getElementById('showMachineLabels').addEventListener('change', function(e) {
+                machineLabels.forEach(labelInfo => {
+                    labelInfo.element.style.display = e.target.checked ? 'block' : 'none';
+                });
+            });
+            
+            document.getElementById('showMaterialFlow').addEventListener('change', function(e) {
+                materialObjects.forEach(obj => {
+                    obj.visible = e.target.checked;
+                    if (obj.userData.components) {
+                        obj.userData.components.forEach(comp => {
+                            comp.visible = e.target.checked;
+                        });
+                    }
+                });
+            });
+            
+            // 點擊區域顯示信息
+            renderer.domElement.addEventListener('click', onAreaClick, false);
+        }
+        
+        // 設置樓層視圖
+        function setFloorView(floor) {
+            currentFloorView = floor;
+            updateFloorVisibility();
+            
+            // 更新按鈕狀態
+            document.querySelectorAll('.floor-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`show${floor.charAt(0).toUpperCase() + floor.slice(1)}Floor`).classList.add('active');
+            
+            // 調整相機位置
+            if (floor === 'first') {
+                camera.position.set(30, 5, 30);
+                camera.lookAt(0, -10, 0);
+            } else if (floor === 'second') {
+                camera.position.set(30, 15, 30);
+                camera.lookAt(0, 0, 0);
+            } else {
+                camera.position.set(30, 20, 30);
+                camera.lookAt(0, -5, 0);
+            }
+            controls.update();
+        }
+        
+        // 開始模擬
+        function startSimulation() {
+            simulationRunning = true;
+            startMaterialFlow();
+            document.getElementById('infoDetails').textContent = "模擬運行中 - 電路圖風格軌道系統，橫平豎直不交錯";
+        }
+        
+        // 暫停模擬
+        function pauseSimulation() {
+            simulationRunning = false;
+            document.getElementById('infoDetails').textContent = "模擬已暫停";
+        }
+        
+        // 重置模擬
+        function resetSimulation() {
+            simulationRunning = false;
+            materialObjects.forEach(obj => {
+                scene.remove(obj);
+                if (obj.userData.components) {
+                    obj.userData.components.forEach(comp => scene.remove(comp));
+                }
+            });
+            materialObjects = [];
+            animationMixers = [];
+            updateProgress(0);
+            document.getElementById('infoDetails').textContent = "模擬已重置";
+        }
+        
+        // 切換控制面板顯示
+        function togglePanel() {
+            isPanelVisible = !isPanelVisible;
+            const panel = document.getElementById('controlPanel');
+            const toggleBtn = document.getElementById('togglePanel');
+            
+            if (isPanelVisible) {
+                panel.classList.remove('hidden');
+                toggleBtn.textContent = '☰';
+            } else {
+                panel.classList.add('hidden');
+                toggleBtn.textContent = '☰';
+            }
+        }
+        
+        // 處理區域點擊
+        function onAreaClick(event) {
+            event.preventDefault();
+            
+            // 計算鼠標位置歸一化設備坐標
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+            
+            // 創建射線投射器
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            // 計算與區域對象的交點
+            const allAreas = [...firstFloorObjects, ...secondFloorObjects].filter(obj => obj.userData && obj.userData.name);
+            const intersects = raycaster.intersectObjects(allAreas);
+            
+            if (intersects.length > 0) {
+                const area = intersects[0].object;
+                const info = area.userData;
+                
+                // 更新信息顯示
+                document.getElementById('infoTitle').textContent = info.name;
+                document.getElementById('infoDetails').textContent = 
+                    `${info.description} | 尺寸: ${info.size.width} × ${info.size.depth} × ${info.size.height}米`;
+                
+                // 高亮選中區域
+                allAreas.forEach(a => {
+                    a.material.opacity = 0.7;
+                    a.material.emissive.set(0x000000);
+                });
+                
+                area.material.opacity = 0.9;
+                area.material.emissive.set(0x333333);
+            }
+        }
+        
+        // 窗口大小調整
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // 動畫循環
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            
+            // 更新動畫混合器
+            animationMixers.forEach(mixer => {
+                mixer.update(delta);
+            });
+            
+            // 更新物料流動
+            updateMaterialFlow(delta);
+            
+            // 更新軌道動畫
+            updateTrackAnimation(delta);
+            
+            // 更新AGV動畫
+            updateAGVAnimation(delta);
+            
+            // 更新升降機動畫
+            updateElevatorAnimation(delta);
+            
+            // 更新卸貨動畫
+            updateUnloadingAnimation(delta);
+            
+            // 更新機器標籤位置
+            updateMachineLabels();
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // 啟動應用
+        init();
+    </script>
+</body>
+</html>
