@@ -18,12 +18,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Show files (Debug)
+      - name: Debug file structure
         run: |
-          echo "=== 文件列表 ==="
+          echo "=== 文件结构 ==="
           ls -la
-          echo "=== HTML 文件 ==="
-          find . -name "*.html" -type f
+          echo "=== AutoLineModel 目录 ==="
+          ls -la AutoLineModel/
           
       - name: Setup Pages
         uses: actions/configure-pages@v3
@@ -31,7 +31,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: "."
+          path: "AutoLineModel"  # 关键修改：指定子目录路径
           
       - name: Deploy to GitHub Pages
         id: deployment
